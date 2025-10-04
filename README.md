@@ -1,6 +1,10 @@
 # BigCommerce Catalog Migrator
 
+## Version 2.0 - Refactored & Improved Architecture 🎉
+
 Copy your BigCommerce **catalog** from a **production** store to a **sandbox** (or any other BC store) using the V3 REST API.
+
+### Features
 
 - ✅ Brands → by name
 - ✅ Categories → preserves parent → child tree (path-based mapping)
@@ -11,6 +15,16 @@ Copy your BigCommerce **catalog** from a **production** store to a **sandbox** (
 - ✅ Pagination, 429 retry w/ backoff, id‑remapping
 - ✅ Duplicate‑name safe via **upsert by name** (configurable)
 - ✅ Variant SKUs → **conflict‑safe** creation (`suffix` / `blank` / `skip` strategies)
+- ✅ Inventory synchronization with Inventory API
+
+### What's New in v2.0
+
+- 🏗️ **Modular Architecture**: Refactored from a single 847-line file into 17+ focused modules
+- 📦 **Better Organization**: Clear separation of concerns (config, API, services, migrators)
+- 🧪 **Testable**: Each component can be tested independently
+- 🔧 **Maintainable**: Easier to understand, modify, and extend
+- 📚 **Well Documented**: Comprehensive architecture and migration guides
+- 🔄 **100% Compatible**: All features work exactly the same as v1.0
 
 > **Tech**: Node.js (ESM), Axios, Dotenv, FormData, mime-types.
 
@@ -61,6 +75,11 @@ npm i
 ```
 
 This project uses ESM (`"type": "module"`) in `package.json`.
+
+### Requirements
+
+- **Node.js 18+**
+- BigCommerce API credentials (see Configuration below)
 
 
 ---
@@ -130,27 +149,25 @@ VARIANT_SKU_SUFFIX=-SBX
 
 ## Usage
 
-### 1) Dry‑run (no writes)
+### Quick Start
 
 ```bash
-# .env: DRY_RUN=true
-npm start
+# 1. Dry-run to preview (no changes made)
+npm start -- --dry-run
+
+# 2. Migrate specific product by name
+npm start -- --write --only-name="Product Name"
+
+# 3. Full migration
+npm start -- --write
 ```
 
-### 2) Full migration
+### Available Scripts
 
 ```bash
-# .env: DRY_RUN=false
-npm start
-```
-
-### 3) Migrate only a subset (optional quick filter)
-
-```js
-// inside migrateProducts()
-const only = new Set([1204, 2054]); // source product IDs to include
-const products = (await pagedGetAll(src, '/catalog/products', { include: 'custom_fields,options,variants' }))
-  .filter(p => only.has(p.id));
+npm start           # Run migration with new architecture
+npm run migrate     # Same as npm start
+npm run legacy      # Use legacy v1.0 monolithic script
 ```
 
 ---
@@ -300,28 +317,65 @@ A: Not included by default; contributions welcome.
 ## Project Structure
 
 ```
-.
-├─ migrate.js                 # main script
-├─ package.json               # deps & scripts
-├─ .env                       # your credentials (not committed)
-└─ README.md                  # this file
+BCProductMigration/
+├── src/
+│   ├── index.js                    # Main entry point
+│   ├── config/                     # Configuration management
+│   │   ├── env.js                  # Environment variables
+│   │   └── cli.js                  # CLI argument parser
+│   ├── api/                        # API communication layer
+│   │   └── client.js               # BigCommerce API client, retry logic, pagination
+│   ├── utils/                      # Utility functions
+│   │   ├── string.js               # String normalization
+│   │   └── array.js                # Array utilities
+│   ├── models/                     # Data models
+│   │   ├── product.js              # Product model
+│   │   └── category.js             # Category model
+│   ├── services/                   # Business services
+│   │   ├── inventory.js            # Inventory operations
+│   │   ├── image.js                # Image upload
+│   │   ├── customFields.js         # Custom fields
+│   │   └── options.js              # Options and variants
+│   └── migrators/                  # Migration orchestration
+│       ├── brands.js               # Brand migration
+│       ├── categories.js           # Category migration
+│       ├── products.js             # Product migration
+│       ├── productFetcher.js       # Product fetching
+│       ├── productUpsert.js        # Product upsert
+│       └── variants.js             # Variant migration
+├── migrate.js                      # Legacy v1.0 script (kept for reference)
+├── package.json
+├── .env
+├── README.md                       # This file
+├── ARCHITECTURE.md                 # Technical architecture documentation
+└── MIGRATION_GUIDE.md              # v1.0 to v2.0 migration guide
 ```
 
-Key functions (high‑level):
-- `pagedGetAll()` – pagination helper
-- `requestWithRetry()` – 429-aware HTTP
-- `migrateBrands()`, `migrateCategories()`, `migrateProducts()` – orchestration
-- `upsertProductByName()` – duplicate‑name safe
-- `ensureOptionsInDst()` / `indexDstOptions()` – option dedupe & lookup
-- `ensureOptionValue()` – auto‑create option values on demand
-- `mapVariantOptionValuesAsync()` – robust mapping to `{ option_id, id }`
-- `ensureCustomFieldsInDst()` – custom field idempotency
-- `uploadImageWithFallback()` – image_url → binary upload fallback
+### Key Components
+
+**Configuration Layer**: Centralized management of environment variables and CLI arguments
+
+**API Layer**: HTTP client with automatic retry, rate limiting, and pagination
+
+**Services Layer**: Reusable business logic for inventory, images, custom fields, and options
+
+**Migrators Layer**: High-level orchestration for each entity type (brands, categories, products)
+
+**Models Layer**: Data transformation and business rules
 
 
 ---
 
 ## Changelog
+
+### 2.0 - Architecture Refactor (Current)
+- 🏗️ **Complete architectural refactor**: Modular design with clear separation of concerns
+- 📦 **17+ focused modules**: Replaced single 847-line file with organized structure
+- 🧪 **Testable components**: Each module can be tested independently
+- 📚 **Comprehensive documentation**: Added ARCHITECTURE.md and MIGRATION_GUIDE.md
+- 🔄 **100% compatible**: All features work exactly as in v1.0
+- 🔧 **Maintainable**: Easier to understand, modify, and extend
+- ✅ **Legacy support**: Original migrate.js kept for reference
 
 ### 1.2
 - **CLI**: add `--dry-run`, `--write`, `--only-id`, `--only-name`, `--name-regex`, `--limit`, `--start-after-id`, `--skip-images`, `--skip-custom-fields`.
@@ -341,6 +395,18 @@ Key functions (high‑level):
 
 ---
 
+## Documentation
+
+📖 **User Guides**
+- [README.md](README.md) - This file: Quick start and usage guide
+- [Configuration Guide](#configuration) - Environment variables and settings
+
+🏗️ **Technical Documentation**
+- [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture and design principles
+- [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) - Migrating from v1.0 to v2.0
+
+---
+
 ## Contributing
 
 PRs and issues are welcome. If you add support for modifiers/metafields/channels, please include:
@@ -348,6 +414,22 @@ PRs and issues are welcome. If you add support for modifiers/metafields/channels
 - example payloads,
 - and the migration order of dependent entities.
 
+### Development Guide
+
+The modular architecture makes it easy to extend:
+
+**To add a new entity type (e.g., Customers):**
+1. Create model: `src/models/customers.js`
+2. Create service (if needed): `src/services/customers.js`
+3. Create migrator: `src/migrators/customers.js`
+4. Import and call from `src/index.js`
+
+**To add a new strategy:**
+1. Add config option: `src/config/env.js`
+2. Implement logic in relevant service
+3. Use in migrator
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed technical documentation.
 
 ---
 

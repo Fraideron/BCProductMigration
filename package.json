@@ -1,13 +1,18 @@
 {
-    "name": "bc-product-migrator",
-    "version": "1.0.0",
-    "type": "module",
-    "scripts": {
-      "start": "node migrate.js"
-    },
-    "dependencies": {
-      "axios": "^1.7.7",
-      "dotenv": "^16.4.5"
-    }
+  "name": "bc-product-migrator",
+  "version": "2.0.0",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "migrate": "node src/index.js",
+    "legacy": "node migrate.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "dotenv": "^16.4.5",
+    "form-data": "^4.0.0",
+    "mime-types": "^2.1.35"
   }
+}
   
