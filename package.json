@@ -1,0 +1,13 @@
+{
+    "name": "bc-product-migrator",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+      "start": "node migrate.js"
+    },
+    "dependencies": {
+      "axios": "^1.7.7",
+      "dotenv": "^16.4.5"
+    }
+  }
+  
