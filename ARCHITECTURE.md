@@ -33,7 +33,6 @@ BCProductMigration/
 │       ├── productFetcher.js       # Product fetching and filtering
 │       ├── productUpsert.js        # Product upsert strategies
 │       └── variants.js             # Variant migration with SKU conflict handling
-├── migrate.js                      # Legacy monolithic script (kept for reference)
 ├── package.json
 ├── .env
 └── README.md
@@ -273,10 +272,9 @@ The refactored codebase maintains 100% feature parity with the original monolith
 - Clearer dependency management
 
 ### Backward Compatibility
-The original `migrate.js` is kept for reference and can still be used:
+The new modular architecture maintains 100% feature parity with the original implementation:
 ```bash
-npm run legacy  # Uses old monolithic script
-npm start       # Uses new modular architecture
+npm start       # Uses modular architecture
 ```
 
 ## Future Enhancements

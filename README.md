@@ -190,9 +190,8 @@ npm start -- --write --to-shopify
 ### Available Scripts
 
 ```bash
-npm start           # Run migration with new architecture
+npm start           # Run migration
 npm run migrate     # Same as npm start
-npm run legacy      # Use legacy v1.0 monolithic script
 ```
 
 ---
@@ -449,7 +448,6 @@ BCProductMigration/
 │       ├── shopifyBrands.js        # Shopify brand migration
 │       ├── shopifyCategories.js    # Shopify category migration
 │       └── shopifyProducts.js      # Shopify product migration
-├── migrate.js                      # Legacy v1.0 script (kept for reference)
 ├── package.json
 ├── .env
 ├── README.md                       # This file
@@ -491,7 +489,6 @@ BCProductMigration/
 - 📚 **Comprehensive documentation**: Added ARCHITECTURE.md and MIGRATION_GUIDE.md
 - 🔄 **100% compatible**: All features work exactly as in v1.0
 - 🔧 **Maintainable**: Easier to understand, modify, and extend
-- ✅ **Legacy support**: Original migrate.js kept for reference
 
 ### 1.2
 - **CLI**: add `--dry-run`, `--write`, `--only-id`, `--only-name`, `--name-regex`, `--limit`, `--start-after-id`, `--skip-images`, `--skip-custom-fields`.
