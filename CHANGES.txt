@@ -1,0 +1,127 @@
+BIGCOMMERCE TO SHOPIFY MIGRATION FEATURE - CHANGES SUMMARY
+===========================================================
+
+NEW CLI PARAMETER: --to-shopify
+  Enables migration from BigCommerce to Shopify stores
+
+FILES ADDED (7):
+  1. src/api/shopifyClient.js
+     - Shopify Admin API client with rate limiting and pagination
+     
+  2. src/migrators/shopifyBrands.js
+     - Migrates BigCommerce brands to Shopify vendors
+     
+  3. src/migrators/shopifyCategories.js
+     - Migrates BigCommerce categories to Shopify custom collections
+     
+  4. src/migrators/shopifyProducts.js
+     - Comprehensive product migration with variants, images, and metafields
+     
+  5. SHOPIFY_MIGRATION.md
+     - Complete guide for Shopify migration
+     
+  6. QUICK_START_SHOPIFY.md
+     - Quick reference for Shopify migration
+     
+  7. SUMMARY.md
+     - Implementation summary and technical details
+
+FILES MODIFIED (5):
+  1. src/index.js
+     - Added Shopify migration mode routing
+     - Creates Shopify client when --to-shopify flag is used
+     
+  2. src/config/env.js
+     - Added Shopify configuration (shopDomain, accessToken, apiVersion)
+     - Updated validateConfig() to check Shopify credentials
+     
+  3. src/config/cli.js
+     - Added --to-shopify flag parsing
+     
+  4. .example.env
+     - Added Shopify environment variables template
+     
+  5. README.md
+     - Updated features list
+     - Added Shopify migration section
+     - Updated CLI flags documentation
+     - Updated changelog to v2.1
+
+KEY FEATURES:
+  ✅ Full BigCommerce to Shopify migration support
+  ✅ Automatic platform entity mapping
+  ✅ Rate limit handling for Shopify API
+  ✅ Dry run mode for testing
+  ✅ All existing CLI filters work with Shopify
+  ✅ Comprehensive error handling and logging
+  ✅ Complete documentation
+
+USAGE EXAMPLES:
+  # Dry run
+  npm start -- --dry-run --to-shopify
+  
+  # Test with one product
+  npm start -- --write --to-shopify --only-name="Product Name"
+  
+  # Full migration
+  npm start -- --write --to-shopify
+  
+  # With filters
+  npm start -- --write --to-shopify --limit=10
+  npm start -- --write --to-shopify --only-id=123,456
+  npm start -- --write --to-shopify --skip-images
+
+PLATFORM MAPPINGS:
+  BigCommerce Brands      → Shopify Vendors
+  BigCommerce Categories  → Shopify Custom Collections
+  BigCommerce Products    → Shopify Products
+  BigCommerce Variants    → Shopify Variants (max 3 options)
+  BigCommerce Options     → Shopify Options (max 3)
+  BigCommerce Custom Flds → Shopify Metafields
+  BigCommerce Images      → Shopify Images
+  BigCommerce Inventory   → Shopify Inventory Levels
+  BigCommerce Weight      → Shopify Variant Weight (in lbs)
+  BigCommerce Dimensions  → Shopify Variant Metafields (custom.dimension_width, custom.dimension_height, custom.dimension_depth)
+
+BACKWARD COMPATIBILITY:
+  ✅ All existing BigCommerce-to-BigCommerce features work unchanged
+  ✅ No breaking changes to existing code
+  ✅ All CLI flags remain compatible
+  ✅ Legacy migrate.js still available
+
+CONFIGURATION REQUIRED:
+  Add to .env file:
+    SHOPIFY_SHOP_DOMAIN=your-store.myshopify.com
+    SHOPIFY_ACCESS_TOKEN=shpat_xxxxxxxxxxxxxxxx
+    SHOPIFY_API_VERSION=2024-01
+
+TESTING:
+  ✅ All new files pass syntax validation
+  ✅ Script runs in both BigCommerce and Shopify modes
+  ✅ Validation works correctly
+  ✅ CLI parameter parsing works
+
+RECENT UPDATES:
+  v2.1.3 (Oct 2025) - Categories/Collections Debug
+    🐛 Added comprehensive logging for category→collection mapping
+    🐛 Shows collection map status and details
+    🐛 Logs each category assignment attempt with results
+    ✅ Better error messages when collections fail to map
+    ✅ Shows why products aren't being added to collections
+    📚 Added CATEGORIES_FIX_SUMMARY.md guide
+  
+  v2.1.2 (Oct 2025) - Dimensions Fix
+    🐛 Fixed metafield namespace from 'dimensions' to 'custom'
+    🐛 Changed keys to dimension_width, dimension_height, dimension_depth
+    ✅ Added extensive debug logging for troubleshooting
+    ✅ Improved error messages and visibility
+    📚 Added TROUBLESHOOTING_DIMENSIONS.md guide
+  
+  v2.1.1 (Oct 2025)
+    ✅ Added dimensions migration (width, height, depth)
+    ✅ Dimensions stored as Shopify variant metafields under 'custom' namespace
+    ✅ Supports both product-level and variant-level dimensions
+    ✅ Fallback logic: variant dimensions → product dimensions
+    ✅ Skip null/empty dimension values (allows 0)
+
+VERSION: 2.1.3
