@@ -7,6 +7,8 @@ export function parseCli(argv = process.argv.slice(2)) {
       args.dryRun = true;
     } else if (tok === '--write') {
       args.dryRun = false;
+    } else if (tok === '--to-shopify') {
+      args.toShopify = true;
     } else if (tok.startsWith('--only-id=')) {
       args.onlyIds = tok.split('=')[1]
         .split(',')

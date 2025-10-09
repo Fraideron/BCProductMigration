@@ -2,20 +2,22 @@
 
 ## Version 2.0 - Refactored & Improved Architecture 🎉
 
-Copy your BigCommerce **catalog** from a **production** store to a **sandbox** (or any other BC store) using the V3 REST API.
+Copy your BigCommerce **catalog** from a **production** store to a **sandbox** (or any other BC store) or **Shopify** store using the V3 REST API.
 
 ### Features
 
-- ✅ Brands → by name
-- ✅ Categories → preserves parent → child tree (path-based mapping)
+- ✅ Brands → by name (vendors in Shopify)
+- ✅ Categories → preserves parent → child tree (custom collections in Shopify)
 - ✅ Products → base fields (skips `custom_url` to avoid collisions)
 - ✅ Options & Variants → **idempotent** option creation, robust mapping, **auto‑create missing option values**
-- ✅ Custom Fields → **idempotent** (skip duplicates or overwrite by name)
+- ✅ Custom Fields → **idempotent** (metafields in Shopify)
 - ✅ Images → tries `image_url` first, then **falls back to binary upload**
+- ✅ Weight & Dimensions → migrates product dimensions (width, height, depth) to Shopify metafields
 - ✅ Pagination, 429 retry w/ backoff, id‑remapping
 - ✅ Duplicate‑name safe via **upsert by name** (configurable)
 - ✅ Variant SKUs → **conflict‑safe** creation (`suffix` / `blank` / `skip` strategies)
 - ✅ Inventory synchronization with Inventory API
+- ✅ **NEW**: Migrate to Shopify stores with `--to-shopify` flag
 
 ### What's New in v2.0
 
@@ -25,6 +27,7 @@ Copy your BigCommerce **catalog** from a **production** store to a **sandbox** (
 - 🔧 **Maintainable**: Easier to understand, modify, and extend
 - 📚 **Well Documented**: Comprehensive architecture and migration guides
 - 🔄 **100% Compatible**: All features work exactly the same as v1.0
+- 🛍️ **Shopify Support**: Migrate from BigCommerce to Shopify stores
 
 > **Tech**: Node.js (ESM), Axios, Dotenv, FormData, mime-types.
 
@@ -38,6 +41,7 @@ Copy your BigCommerce **catalog** from a **production** store to a **sandbox** (
 - [Configuration](#configuration)
 - [What Gets Migrated](#what-gets-migrated)
 - [Usage](#usage)
+- [Shopify Migration](#shopify-migration)
 - [CLI filters & flags](#cli-filters--flags)
 - [How It Works](#how-it-works)
 - [Idempotency & Re‑runs](#idempotency--re-runs)
@@ -62,6 +66,7 @@ Copy your BigCommerce **catalog** from a **production** store to a **sandbox** (
   - **Destination (sandbox)**: *V2/V3 API Token* with at least:
     - Products, Brands, Categories, Options, Product Images, Product Variants, Custom Fields: **Read/Write**
 - Your **store hash** for both stores (e.g. `abc123` from `https://store-abc123.mybigcommerce.com/...`).
+- **For Shopify migration**: Shopify Admin API access token with appropriate permissions
 
 
 ---
@@ -80,6 +85,7 @@ This project uses ESM (`"type": "module"`) in `package.json`.
 
 - **Node.js 18+**
 - BigCommerce API credentials (see Configuration below)
+- Shopify credentials (optional, for Shopify migration)
 
 
 ---
@@ -95,10 +101,16 @@ SRC_ACCESS_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 # Optional; script auto-normalizes to /stores/<hash>/v3 even if omitted:
 SRC_BASE_URL=https://api.bigcommerce.com
 
-# --- DESTINATION (sandbox) ---
+# --- DESTINATION (sandbox) - for BigCommerce to BigCommerce migration ---
 DST_STORE_HASH=yyyyyyyy
 DST_ACCESS_TOKEN=yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
 DST_BASE_URL=https://api.bigcommerce.com
+
+# --- SHOPIFY (alternative destination) - for BigCommerce to Shopify migration ---
+# Use with --to-shopify flag
+SHOPIFY_SHOP_DOMAIN=your-store.myshopify.com
+SHOPIFY_ACCESS_TOKEN=shpat_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+SHOPIFY_API_VERSION=2024-01
 
 # --- Tuning & behavior ---
 PAGE_SIZE=250
@@ -151,6 +163,7 @@ VARIANT_SKU_SUFFIX=-SBX
 
 ### Quick Start
 
+#### BigCommerce to BigCommerce Migration
 ```bash
 # 1. Dry-run to preview (no changes made)
 npm start -- --dry-run
@@ -162,6 +175,18 @@ npm start -- --write --only-name="Product Name"
 npm start -- --write
 ```
 
+#### BigCommerce to Shopify Migration
+```bash
+# 1. Dry-run to preview Shopify migration
+npm start -- --dry-run --to-shopify
+
+# 2. Migrate specific product to Shopify
+npm start -- --write --to-shopify --only-name="Product Name"
+
+# 3. Full migration to Shopify
+npm start -- --write --to-shopify
+```
+
 ### Available Scripts
 
 ```bash
@@ -169,6 +194,79 @@ npm start           # Run migration with new architecture
 npm run migrate     # Same as npm start
 npm run legacy      # Use legacy v1.0 monolithic script
 ```
+
+---
+
+## Shopify Migration
+
+The tool now supports migrating from BigCommerce to Shopify stores using the `--to-shopify` flag.
+
+### Shopify Configuration
+
+To migrate to Shopify, you need to set up Shopify credentials in your `.env` file:
+
+```ini
+SHOPIFY_SHOP_DOMAIN=your-store.myshopify.com
+SHOPIFY_ACCESS_TOKEN=shpat_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+SHOPIFY_API_VERSION=2024-01
+```
+
+### How to Get Shopify Credentials
+
+1. Go to your Shopify admin panel
+2. Navigate to **Apps** → **Develop apps**
+3. Create a new app or use an existing one
+4. Configure the following API scopes:
+   - `write_products`
+   - `read_products`
+   - `write_collections`
+   - `read_collections`
+   - `write_inventory`
+   - `read_inventory`
+5. Install the app and copy the **Admin API access token**
+
+### BigCommerce to Shopify Mappings
+
+The migration handles platform differences automatically:
+
+- **Brands** → Shopify **Vendors** (product field)
+- **Categories** → Shopify **Custom Collections**
+- **Custom Fields** → Shopify **Metafields** (namespace: `custom`)
+- **Options** → Shopify **Product Options** (max 3 options)
+- **Variants** → Shopify **Variants**
+- **Images** → Shopify **Product Images**
+- **Inventory** → Shopify **Inventory Levels**
+
+### Shopify Migration Examples
+
+```bash
+# Dry-run full Shopify migration
+npm start -- --dry-run --to-shopify
+
+# Migrate all products to Shopify
+npm start -- --write --to-shopify
+
+# Migrate specific products by ID to Shopify
+npm start -- --write --to-shopify --only-id=123,456,789
+
+# Migrate products matching a name pattern to Shopify
+npm start -- --write --to-shopify --name-regex="^Blue.*"
+
+# Migrate with limit (first 10 products)
+npm start -- --write --to-shopify --limit=10
+
+# Skip images during Shopify migration
+npm start -- --write --to-shopify --skip-images
+```
+
+### Shopify-Specific Notes
+
+- Shopify supports a maximum of **3 product options** (vs unlimited in BigCommerce)
+- Custom fields are stored as **metafields** with namespace `custom`
+- Brands become the **vendor** field on products
+- Categories are mapped to **custom collections**, and products are automatically added to them
+- Inventory is managed through Shopify's inventory system
+- The migration handles Shopify's rate limits automatically with retry logic
 
 ---
 
@@ -187,22 +285,26 @@ CLI flags override `.env` where relevant (e.g., `--dry-run` overrides `DRY_RUN`)
 **Behavior flags**
 - `--dry-run` — force read‑only mode (overrides `DRY_RUN=true/false` in `.env`).
 - `--write` — force write mode (opposite of `--dry-run`).
+- `--to-shopify` — migrate to Shopify instead of BigCommerce (requires Shopify credentials in `.env`).
 - `--skip-images` — do not upload/verify images.
-- `--skip-custom-fields` — do not upsert custom fields.
+- `--skip-custom-fields` — do not upsert custom fields (or metafields for Shopify).
 
 **Examples**
 ```bash
 # Dry run a single product by name contains
-node migrate.js --dry-run --only-name="Greek Key Porcelain Garden Stool"
+npm start -- --dry-run --only-name="Greek Key Porcelain Garden Stool"
 
 # Migrate two specific IDs, write mode, skip images
-node migrate.js --write --only-id=2724,2725 --skip-images
+npm start -- --write --only-id=2724,2725 --skip-images
 
 # Regex match + limit to first hit
-node migrate.js --name-regex="^Blue.*(Stool|Lamp)$" --limit=1
+npm start -- --name-regex="^Blue.*(Stool|Lamp)$" --limit=1
 
 # Resume after a known source id
-node migrate.js --write --start-after-id=2000
+npm start -- --write --start-after-id=2000
+
+# Migrate to Shopify
+npm start -- --write --to-shopify
 ```
 
 ---
@@ -324,7 +426,8 @@ BCProductMigration/
 │   │   ├── env.js                  # Environment variables
 │   │   └── cli.js                  # CLI argument parser
 │   ├── api/                        # API communication layer
-│   │   └── client.js               # BigCommerce API client, retry logic, pagination
+│   │   ├── client.js               # BigCommerce API client, retry logic, pagination
+│   │   └── shopifyClient.js        # Shopify API client
 │   ├── utils/                      # Utility functions
 │   │   ├── string.js               # String normalization
 │   │   └── array.js                # Array utilities
@@ -342,7 +445,10 @@ BCProductMigration/
 │       ├── products.js             # Product migration
 │       ├── productFetcher.js       # Product fetching
 │       ├── productUpsert.js        # Product upsert
-│       └── variants.js             # Variant migration
+│       ├── variants.js             # Variant migration
+│       ├── shopifyBrands.js        # Shopify brand migration
+│       ├── shopifyCategories.js    # Shopify category migration
+│       └── shopifyProducts.js      # Shopify product migration
 ├── migrate.js                      # Legacy v1.0 script (kept for reference)
 ├── package.json
 ├── .env
@@ -368,7 +474,17 @@ BCProductMigration/
 
 ## Changelog
 
-### 2.0 - Architecture Refactor (Current)
+### 2.1 - Shopify Migration Support (Current)
+- 🛍️ **Shopify migration**: Added full support for migrating from BigCommerce to Shopify
+- 🔧 **New CLI flag**: `--to-shopify` to enable Shopify migration mode
+- 🗺️ **Platform mapping**: Automatic conversion of BigCommerce entities to Shopify equivalents
+  - Brands → Vendors
+  - Categories → Custom Collections
+  - Custom Fields → Metafields
+- 🌐 **Shopify API client**: New dedicated client with rate limiting and pagination support
+- 📝 **Enhanced documentation**: Comprehensive guide for Shopify migrations
+
+### 2.0 - Architecture Refactor
 - 🏗️ **Complete architectural refactor**: Modular design with clear separation of concerns
 - 📦 **17+ focused modules**: Replaced single 847-line file with organized structure
 - 🧪 **Testable components**: Each module can be tested independently

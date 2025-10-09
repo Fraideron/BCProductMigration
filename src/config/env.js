@@ -12,6 +12,11 @@ export const config = {
     accessToken: process.env.DST_ACCESS_TOKEN,
     baseUrl: process.env.DST_BASE_URL,
   },
+  shopify: {
+    shopDomain: process.env.SHOPIFY_SHOP_DOMAIN,
+    accessToken: process.env.SHOPIFY_ACCESS_TOKEN,
+    apiVersion: process.env.SHOPIFY_API_VERSION || '2024-01',
+  },
   settings: {
     pageSize: parseInt(process.env.PAGE_SIZE || '250', 10),
     dryRun: (process.env.DRY_RUN || 'false').toLowerCase() === 'true',
@@ -29,10 +34,20 @@ export const config = {
 };
 
 // Validate required environment variables
-export function validateConfig() {
-  const { source, destination } = config;
+export function validateConfig(toShopify = false) {
+  const { source, destination, shopify } = config;
   
-  if (!source.storeHash || !source.accessToken || !destination.storeHash || !destination.accessToken) {
-    throw new Error('❌ Missing env vars. Set SRC_STORE_HASH, SRC_ACCESS_TOKEN, DST_STORE_HASH, DST_ACCESS_TOKEN.');
+  if (!source.storeHash || !source.accessToken) {
+    throw new Error('❌ Missing source env vars. Set SRC_STORE_HASH, SRC_ACCESS_TOKEN.');
+  }
+  
+  if (toShopify) {
+    if (!shopify.shopDomain || !shopify.accessToken) {
+      throw new Error('❌ Missing Shopify env vars. Set SHOPIFY_SHOP_DOMAIN, SHOPIFY_ACCESS_TOKEN.');
+    }
+  } else {
+    if (!destination.storeHash || !destination.accessToken) {
+      throw new Error('❌ Missing destination env vars. Set DST_STORE_HASH, DST_ACCESS_TOKEN.');
+    }
   }
 }
